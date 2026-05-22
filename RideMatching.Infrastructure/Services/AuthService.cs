@@ -8,7 +8,7 @@ using RideMatching.Application.DTOs;
 using RideMatching.Application.Interfaces;
 using RideMatching.Domain.Entities;
 
-namespace RideMatching.Application.Services;
+namespace RideMatching.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
