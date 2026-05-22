@@ -15,20 +15,6 @@ public class DriverService : IDriverService
         _context = context;
     }
 
-    public async Task<Guid> CreateDriverAsync(CreateDriverDto dto)
-    {
-        var driver = new Driver
-        {
-            Id = Guid.NewGuid(),
-            Name = dto.Name
-        };
-
-        _context.Drivers.Add(driver);
-        await _context.SaveChangesAsync();
-
-        return driver.Id;
-    }
-
     public async Task GoOnlineAsync(Guid driverId)
     {
         var driver = await _context.Drivers.FindAsync(driverId);
@@ -46,5 +32,28 @@ public class DriverService : IDriverService
         driver.Longitude = dto.Longitude;
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<Guid> CreateDriverAsync(CreateDriverDto dto, Guid userId)
+    {
+        var existing = await _context.Drivers
+            .FirstOrDefaultAsync(d => d.UserId == userId);
+
+        if (existing != null)
+            throw new Exception("Driver profile already exists.");
+
+        var driver = new Driver
+        {
+            Id = Guid.NewGuid(),
+            Name = dto.Name,
+            UserId = userId,
+            IsOnline = false,
+            IsAvailable = true
+        };
+
+        _context.Drivers.Add(driver);
+        await _context.SaveChangesAsync();
+
+        return driver.Id;
     }
 }

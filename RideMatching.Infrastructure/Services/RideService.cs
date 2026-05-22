@@ -16,12 +16,19 @@ public class RideService : IRideService
         _context = context;
     }
 
-    public async Task<Guid> CreateRideRequestAsync(CreateRideRequestDto dto)
+    public async Task<Guid> CreateRideRequestAsync(CreateRideRequestDto dto, Guid userId)
     {
+        
+        var rider = await _context.Riders
+            .FirstOrDefaultAsync(r => r.UserId == userId);
+
+        if (rider == null)
+            throw new Exception("Rider profile not found.");
+
         var ride = new RideRequest
         {
             Id = Guid.NewGuid(),
-            RiderId = dto.RiderId,
+            RiderId = rider.Id,   
             PickupLatitude = dto.PickupLatitude,
             PickupLongitude = dto.PickupLongitude,
             Status = RideStatus.Pending,
@@ -49,7 +56,6 @@ public class RideService : IRideService
         }
 
         _context.RideRequests.Add(ride);
-
         await _context.SaveChangesAsync();
 
         return ride.Id;
@@ -59,7 +65,10 @@ public class RideService : IRideService
     {
         var ride = await _context.RideRequests
             .Include(x => x.AssignedDriver)
-            .FirstAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (ride == null)
+            throw new Exception("Ride not found.");
 
         return ride;
     }

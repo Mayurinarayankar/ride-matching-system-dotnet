@@ -19,4 +19,6 @@ public class Driver
 
     [Timestamp]
     public byte[] RowVersion { get; set; } = default!;
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
 }

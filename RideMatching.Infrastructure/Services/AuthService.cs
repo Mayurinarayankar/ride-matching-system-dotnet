@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using RideMatching.Application.DTOs;
 using RideMatching.Application.Interfaces;
 using RideMatching.Domain.Entities;
+using RideMatching.Infrastructure.Data;
 
 namespace RideMatching.Infrastructure.Services;
 
@@ -14,13 +15,15 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly AppDbContext _context;
 
     public AuthService(
         UserManager<User> userManager,
-        IConfiguration configuration)
+        IConfiguration configuration,AppDbContext  appDbContext)
     {
         _userManager = userManager;
         _configuration = configuration;
+            _context = appDbContext;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -40,6 +43,28 @@ public class AuthService : IAuthService
             throw new Exception("Registration failed");
 
         await _userManager.AddToRoleAsync(user, dto.Role);
+        if (dto.Role == "Rider")
+        {
+            _context.Riders.Add(new Rider
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = dto.FullName
+            });
+            await _context.SaveChangesAsync();
+        }
+        else if (dto.Role == "Driver")
+        {
+            _context.Drivers.Add(new Driver
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = dto.FullName,
+                IsOnline = false,
+                IsAvailable = true
+            });
+            await _context.SaveChangesAsync();
+        }
 
         var token = await GenerateToken(user);
 
@@ -48,7 +73,6 @@ public class AuthService : IAuthService
             Token = token
         };
     }
-
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
